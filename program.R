@@ -10,14 +10,24 @@ zbior.testowy<-dane[-index,]
 ####
 
 
-#2 - wybór modelu regresji liniowej
+#2 - oszacowanie i wybór modelu regresji liniowej
 model.full<- lm(Rating~. , data = zbior.uczacy)
+
 wybrany.model<-step(model.full, direction = "both", trace=FALSE ) 
 #direction both oznacza wykorzystanie statystyki Cp Mallowsa do wyboru optymalnego modelu
 
+# sprawdzenie współliniowości modelu
+library(car)
+vif(wybrany.model)
+
+# sprawdzenie korelacji między zmiennymi objaśniającymi wybranymi do modelu
+cor(zbior.uczacy[,c(1,2,4,10)] )
+
+# ze względu na współczynnik vif oraz korelację, z modelu została usunięta zmienna objaśniająca Limit
+wybrany.model<-lm(Rating~ Income + Cards + Balance, data=zbior.uczacy)
+
 summary(wybrany.model)
 coef(wybrany.model)
-#wybrany.model <- lm(Rating~ Income + Limit + Cards + Balance , data = zbior.uczacy)
 #####
 
 
@@ -57,11 +67,9 @@ pValue.F
 
 wyniki
 
-
 # współliniowość
 library(car)
 vif(wybrany.model)
-
 
 # analiza reszt - testy diagnostyczne
 reszty<-residuals(wybrany.model)
@@ -84,29 +92,24 @@ bptest(wybrany.model)
 ## test Goldfelda-Quandta
 library(tseries)
 
-#wybrany.model <- lm(Rating~ Income + Limit + Cards + Balance , data = zbior.uczacy)
-
 Income=as.factor(zbior.uczacy$Income)
-Limit=as.factor(zbior.uczacy$Limit)
 Cards=as.factor(zbior.uczacy$Cards)
 Balance=as.factor(zbior.uczacy$Balance)
 
 gqtest(wybrany.model)
 gqtest(wybrany.model, order.by=Income,point=0.5)
-gqtest(wybrany.model, order.by=Limit,point=0.5)
 gqtest(wybrany.model, order.by=Cards,point=0.5)
 gqtest(wybrany.model, order.by=Balance,point=0.5)
+
 
 ## test Harrisona-McCabe
 hmctest(wybrany.model, plot=TRUE)
 hmctest(wybrany.model, order.by=Income,point=0.5,plot=TRUE)
-hmctest(wybrany.model, order.by=Limit,point=0.5,plot=TRUE)
 hmctest(wybrany.model, order.by=Cards,point=0.5, plot=TRUE)
 hmctest(wybrany.model, order.by=Balance,point=0.5, plot=TRUE)
 
-par(mfrow=c(2,2))
+par(mfrow=c(1,3))
 hmctest(wybrany.model, order.by=Income,point=0.5,plot=TRUE)
-hmctest(wybrany.model, order.by=Limit,point=0.5,plot=TRUE)
 hmctest(wybrany.model, order.by=Cards,point=0.5, plot=TRUE)
 hmctest(wybrany.model, order.by=Balance,point=0.5, plot=TRUE)
 
@@ -117,15 +120,14 @@ par(mfrow=c(1,1))
 ## test Durbina-Watsona 
 dwtest(wybrany.model, alternative = "two.sided")
 dwtest(wybrany.model, order.by=Income, alternative = "two.sided")
-dwtest(wybrany.model, order.by=Limit, alternative = "two.sided")
 dwtest(wybrany.model, order.by=Cards, alternative = "two.sided")
 dwtest(wybrany.model, order.by=Balance, alternative = "two.sided")
+
 
 ## test Breuscha-Godfreya 
 rzad<-2
 bgtest(wybrany.model, order=rzad)
 bgtest(wybrany.model, order.by=Income, order=rzad)
-bgtest(wybrany.model, order.by=Limit, order=rzad)
 bgtest(wybrany.model, order.by=Cards, order=rzad)
 bgtest(wybrany.model, order.by=Balance, order=rzad)
 
@@ -134,12 +136,6 @@ bgtest(wybrany.model, order.by=Balance, order=rzad)
 ## test Harveya-Colliera
 harvtest(wybrany.model)
 
-## test Rainbow
-raintest(wybrany.model,fraction = 0.4)
-raintest(wybrany.model,fraction = 0.4, order.by=Income)
-raintest(wybrany.model,fraction = 0.4, order.by=Limit)
-raintest(wybrany.model,fraction = 0.4, order.by=Cards)
-raintest(wybrany.model,fraction = 0.4, order.by=Balance)
 
 ## test Ramseya RESET 
 resettest(wybrany.model, power = 2)
